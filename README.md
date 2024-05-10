@@ -35,8 +35,9 @@ ratatui-input = "*"
 ```
 
 ## Key mappings
+
 | Mappings                           | Description                                           |
-|--------------------------------------------------------------------------------------------|
+| ------------------------------------------------------------------------------------------ |
 | `→`                                | Move cursor forawrd by one character                  |
 | `←`                                | Move cursor back by one character                     |
 | `Shift+→`                          | Select under cursor and move forawrd by one character |
@@ -57,3 +58,5 @@ ratatui-input = "*"
 ## License
 
 [ratatui-input][] is distributed under [The MIT License](./LICENSE.txt).
+
+[ratatui]: https://github.com/ratatui-org/ratatui
