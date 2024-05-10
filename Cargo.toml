@@ -1,0 +1,19 @@
+[package]
+name = "ratatui_input"
+version = "0.1.0"
+edition = "2021"
+autoexamples = true
+authors = ["Vid Vrbnjak"]
+categories = ["command-line-interface", "gui"]
+keywords = ["gui", "ratatui", "input", "plugin"]
+rust-version = "1.76.0"
+publish = true
+license = "MIT"
+
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+clipboard-win = "5.3.1"
+crossterm = "0.27.0"
+ratatui = "0.26.2"
