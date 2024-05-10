@@ -36,8 +36,9 @@ ratatui-input = "*"
 
 ## Key mappings
 
+
 | Mappings                           | Description                                           |
-| ------------------------------------------------------------------------------------------ |
+| -----------------------------------|------------------------------------------------------ |
 | `→`                                | Move cursor forawrd by one character                  |
 | `←`                                | Move cursor back by one character                     |
 | `Shift+→`                          | Select under cursor and move forawrd by one character |
