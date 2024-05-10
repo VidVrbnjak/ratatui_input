@@ -18,6 +18,7 @@ ratatui-input
 - Backend agnostic
 - Undo/Redo
 - Masking
+- Autoscroll
 
 [Documentation][doc]
 
@@ -41,8 +42,8 @@ ratatui-input = "*"
 | -----------------------------------|------------------------------------------------------ |
 | `→`                                | Move cursor forawrd by one character                  |
 | `←`                                | Move cursor back by one character                     |
-| `Shift+→`                          | Select under cursor and move forawrd by one character |
-| `Shift+←`                          | Select under cursor and move back by one character    |
+| `Shift + →`                          | Select under cursor and move forawrd by one character |
+| `Shift + ←`                          | Select under cursor and move back by one character    |
 | `Ctrl+C`                           | Copy selected text or whole input                     |
 | `Ctrl+V`                           | Replace selected text or insert at cursor             |
 | `Ctrl+X`                           | Cut selected text or whole input                      |
@@ -53,8 +54,8 @@ ratatui-input = "*"
 | `Backspace`                        | Delete character before cursor                        |
 | `Delete`                           | Delete character under cursor                         |
 | `Insert`                           | Toggle insert mode                                    |
-| `TODO` `Ctrl+A`                    | Select everything                                     |
-| `TODO` `Ctrl+W`                    | Select current word                                   |
+| `TODO:` `Ctrl+A`                    | Select everything                                     |
+| `TODO:` `Ctrl+W`                    | Select current word                                   |
 
 ## License
 
