@@ -3,7 +3,7 @@ use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 /// Messages passed to the InputState
 #[derive(Debug)]
 pub enum Message {
-    /// Empty message, no state change happens. Used to avoid the use of [`Option<Message>`]
+    /// Empty message, no state change happens. Used to avoid the use of [`Option<Message>`].
     Empty,
     /// Gain focus on the input
     Focus,
@@ -41,9 +41,9 @@ pub enum Message {
     Cut,
 }
 
-impl Into<Message> for Event {
-    fn into(self) -> Message {
-        match self {
+impl From<Event> for Message {
+    fn from(value: Event) -> Self {
+        match value {
             Event::FocusGained => Message::Focus,
             Event::FocusLost => Message::RemoveFocus,
             Event::Key(key) => key.into(),
@@ -54,23 +54,23 @@ impl Into<Message> for Event {
     }
 }
 
-impl Into<Message> for KeyEvent {
-    fn into(self) -> Message {
-        if self.kind == KeyEventKind::Release {
+impl From<KeyEvent> for Message {
+    fn from(value: KeyEvent) -> Self {
+        if value.kind == KeyEventKind::Release {
             Message::Empty
         } else {
-            match self.code {
+            match value.code {
                 KeyCode::Backspace => Message::DeleteBeforeCursor,
                 KeyCode::Enter => Message::RemoveFocus,
                 KeyCode::Left => {
-                    if self.modifiers == KeyModifiers::SHIFT {
+                    if value.modifiers == KeyModifiers::SHIFT {
                         Message::MoveLeftWithSelection
                     } else {
                         Message::MoveLeft
                     }
                 }
                 KeyCode::Right => {
-                    if self.modifiers == KeyModifiers::SHIFT {
+                    if value.modifiers == KeyModifiers::SHIFT {
                         Message::MoveRightWithSelection
                     } else {
                         Message::MoveRight
@@ -79,14 +79,14 @@ impl Into<Message> for KeyEvent {
                 KeyCode::Up => Message::Empty,
                 KeyCode::Down => Message::Empty,
                 KeyCode::Home => {
-                    if self.modifiers == KeyModifiers::SHIFT {
+                    if value.modifiers == KeyModifiers::SHIFT {
                         Message::JumpToStartWithSelection
                     } else {
                         Message::JumpToStart
                     }
                 }
                 KeyCode::End => {
-                    if self.modifiers == KeyModifiers::SHIFT {
+                    if value.modifiers == KeyModifiers::SHIFT {
                         Message::JumpToEndWithSelection
                     } else {
                         Message::JumpToEnd
@@ -101,21 +101,21 @@ impl Into<Message> for KeyEvent {
                 KeyCode::F(_) => Message::Empty,
                 KeyCode::Char(c) => match c {
                     'c' => {
-                        if self.modifiers == KeyModifiers::CONTROL {
+                        if value.modifiers == KeyModifiers::CONTROL {
                             Message::Copy
                         } else {
                             Message::Char('c')
                         }
                     }
                     'x' => {
-                        if self.modifiers == KeyModifiers::CONTROL {
+                        if value.modifiers == KeyModifiers::CONTROL {
                             Message::Cut
                         } else {
                             Message::Char('x')
                         }
                     }
                     'v' => {
-                        if self.modifiers == KeyModifiers::CONTROL {
+                        if value.modifiers == KeyModifiers::CONTROL {
                             match clipboard_win::get_clipboard_string() {
                                 Ok(str) => Message::Paste(str),
                                 Err(_) => Message::Empty,

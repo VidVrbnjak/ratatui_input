@@ -7,6 +7,9 @@ ratatui-input
 
 [ratatui-input][crate] is a simple input widget like `<input />` in HTML for [ratatui][].
 
+**UNDER CONSTRUCTION**
+This crate is still under heavy construction and not ready or use yet
+
 **Features**
 
 - Single line input with baisc operations (insert/delet characters, copy, cut, jumps, ...)
@@ -62,5 +65,15 @@ ratatui-input = "*"
 [ratatui-input][] is distributed under [The MIT License](./LICENSE.txt).
 
 [ratatui]: https://github.com/ratatui-org/ratatui
+[crates-io-badge]: https://img.shields.io/crates/v/ratatui-input.svg
 [crate]: https://crates.io/crates/ratatui-input
 [doc]: https:docs.rs/ratatui-input/latest/ratatui-input
+[ci-badge]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/ci.yml/badge.svg?event=push
+[ci]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/ci.yml
+[codecov-badge]: https://codecov.io/gh/vidvrbnjak/tui-ratatui/graph/badge.svg?token=YAA3EVRXAY
+[codecov]: https://codecov.io/gh/vidvrbnjak/ratatui-input
+[crossterm]: https://docs.rs/crossterm/latest/crossterm/
+[termion]: https://docs.rs/termion/latest/termion/
+[termwiz]: https://docs.rs/termwiz/latest/termwiz/
+[ratatui-backend]: https://docs.rs/ratatui/latest/ratatui/backend/trait.Backend.html
+[repo]: https://github.com/vidvrbnjak/ratatui-input

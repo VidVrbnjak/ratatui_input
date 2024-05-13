@@ -6,13 +6,43 @@ use std::{
 use crate::Message;
 
 /// Stored state of the input widget. Used for the cursor position, text selection and windowing/scrolling
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq)]
 pub struct InputState {
     value: String,
     cursor_char_idx: usize,
     in_focus: bool,
     insert_mode: bool,
     selection_start_char_idx: Option<usize>,
+    pub(crate) view_window: ViewWindow,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub(crate) struct ViewWindow {
+    /// Width of the window
+    pub(crate) width: usize,
+    /// Offsett from the left for the window
+    pub(crate) offsett: usize,
+}
+
+impl ViewWindow {
+    pub fn contains(&self, idx: usize) -> bool {
+        self.offsett <= idx && self.offsett + self.width > idx
+    }
+}
+
+impl From<Range<usize>> for ViewWindow {
+    fn from(value: Range<usize>) -> Self {
+        ViewWindow {
+            offsett: value.start,
+            width: value.len(),
+        }
+    }
+}
+
+impl Into<Range<usize>> for ViewWindow {
+    fn into(self) -> Range<usize> {
+        self.offsett..(self.offsett + self.width)
+    }
 }
 
 impl Default for InputState {
@@ -23,6 +53,10 @@ impl Default for InputState {
             in_focus: false,
             insert_mode: false,
             selection_start_char_idx: None,
+            view_window: ViewWindow {
+                width: 1,
+                offsett: 0,
+            },
         }
     }
 }
@@ -45,6 +79,10 @@ impl InputState {
 
                         // End the selection
                         self.selection_start_char_idx = None;
+
+                        // Cursor might fall outside the view window, so we move it to the left as needed
+                        self.view_window.offsett =
+                            min(self.view_window.offsett, self.cursor_char_idx);
                     }
                     None => {
                         if self.cursor_char_idx == self.value.chars().count() {
@@ -53,6 +91,10 @@ impl InputState {
                             // Remove the character from the string
                             let idx = char_idx_to_byte_idx(&self.value, self.cursor_char_idx);
                             let _ = self.value.remove(idx);
+
+                            // Cursor might fall outside the view window, so we move it to the left as needed
+                            self.view_window.offsett =
+                                min(self.view_window.offsett, self.cursor_char_idx);
                         }
                     }
                 }
@@ -68,6 +110,10 @@ impl InputState {
 
                         // End selection
                         self.selection_start_char_idx = None;
+
+                        // Cursor might fall outside the view window, so we move it to the left as needed
+                        self.view_window.offsett =
+                            min(self.view_window.offsett, self.cursor_char_idx);
                     }
                     None => {
                         if self.cursor_char_idx == 0 {
@@ -83,6 +129,10 @@ impl InputState {
 
                             let _ = self.value.remove(idx);
                             self.cursor_char_idx -= 1;
+
+                            // Cursor might fall outside the view window, so we move it to the left as needed
+                            self.view_window.offsett =
+                                min(self.view_window.offsett, self.cursor_char_idx);
                         }
                     }
                 }
@@ -95,6 +145,7 @@ impl InputState {
                     // We are at the start already so we cannot move anymore
                 } else {
                     self.cursor_char_idx -= 1;
+                    self.view_window.offsett = min(self.view_window.offsett, self.cursor_char_idx);
                 }
             }
             Message::MoveRight => {
@@ -105,18 +156,32 @@ impl InputState {
                     // We are already 1 step ahead of the value, so we cannot move anymore
                 } else {
                     self.cursor_char_idx += 1;
+                    if !self.view_window.contains(self.cursor_char_idx) {
+                        self.view_window.offsett =
+                            self.cursor_char_idx + 1 - self.view_window.width;
+                    }
                 }
             }
-            Message::JumpToEnd => self.cursor_char_idx = self.value.chars().count(),
-            Message::JumpToStart => self.cursor_char_idx = 0,
+            Message::JumpToEnd => {
+                self.cursor_char_idx = self.value.chars().count();
+                if !self.view_window.contains(self.cursor_char_idx) {
+                    self.view_window.offsett = self.cursor_char_idx + 1 - self.view_window.width;
+                }
+            }
+            Message::JumpToStart => {
+                self.cursor_char_idx = 0;
+                self.view_window.offsett = min(self.view_window.offsett, self.cursor_char_idx);
+            }
             Message::Char(c) => {
                 match self.selection() {
                     Some(selection) => {
                         // Replace the entire selection with the input
                         self.value
                             .replace_range(selection.byte_range, c.to_string().as_str());
-                        self.cursor_char_idx = selection.char_range.start;
+                        self.cursor_char_idx = selection.char_range.start + 1;
                         self.selection_start_char_idx = None;
+                        self.view_window.offsett =
+                            min(self.view_window.offsett, self.cursor_char_idx);
                     }
                     None => {
                         if self.cursor_char_idx == self.value.chars().count() {
@@ -159,14 +224,26 @@ impl InputState {
                             }
                         }
                         self.cursor_char_idx += 1;
+                        if !self.view_window.contains(self.cursor_char_idx) {
+                            self.view_window.offsett =
+                                self.cursor_char_idx + 1 - self.view_window.width;
+                        }
                     }
                 }
             }
             Message::Paste(str) => match self.selection() {
                 Some(selection) => {
                     self.value.replace_range(selection.byte_range, &str);
-                    self.cursor_char_idx += str.chars().count();
+                    self.cursor_char_idx = selection.char_range.end;
                     self.selection_start_char_idx = None;
+                    self.view_window.offsett =
+                        if selection.text.chars().count() > str.chars().count() {
+                            // Replaced text was longer than pasted text, so view window moves left
+                            min(self.view_window.offsett, self.cursor_char_idx)
+                        } else {
+                            // Replaced text was shorter than pasted text, so view window moves right
+                            self.cursor_char_idx + 1 - self.view_window.width
+                        };
                 }
                 None => {
                     if self.cursor_char_idx == self.value.chars().count() {
@@ -176,6 +253,10 @@ impl InputState {
                             .insert_str(self.cursor_char_idx() + 1, str.as_str());
                     }
                     self.cursor_char_idx += str.chars().count();
+                    if !self.view_window.contains(self.cursor_char_idx) {
+                        self.view_window.offsett =
+                            self.cursor_char_idx + 1 - self.view_window.width;
+                    }
                 }
             },
             Message::ToggleInsertMode => self.insert_mode = !self.insert_mode,
@@ -204,6 +285,7 @@ impl InputState {
                     };
 
                     self.cursor_char_idx -= 1;
+                    self.view_window.offsett = min(self.view_window.offsett, self.cursor_char_idx);
                 }
             }
             Message::MoveRightWithSelection => {
@@ -227,6 +309,10 @@ impl InputState {
                     };
 
                     self.cursor_char_idx += 1;
+                    if !self.view_window.contains(self.cursor_char_idx) {
+                        self.view_window.offsett =
+                            self.cursor_char_idx + 1 - self.view_window.width;
+                    }
                 }
             }
             Message::JumpToEndWithSelection => {
@@ -239,6 +325,9 @@ impl InputState {
                 }
 
                 self.cursor_char_idx = self.value.chars().count() - 1;
+                if !self.view_window.contains(self.cursor_char_idx) {
+                    self.view_window.offsett = self.cursor_char_idx + 1 - self.view_window.width;
+                }
             }
             Message::JumpToStartWithSelection => {
                 if self.cursor_char_idx == 0 {
@@ -254,6 +343,7 @@ impl InputState {
                 }
 
                 self.cursor_char_idx = 0;
+                self.view_window.offsett = min(self.view_window.offsett, self.cursor_char_idx);
             }
             Message::Copy => match self.selection() {
                 Some(selection) => {
@@ -265,24 +355,27 @@ impl InputState {
                     clipboard_win::set_clipboard_string(&self.value).unwrap()
                 }
             },
-            Message::Cut => match self.selection() {
-                Some(selection) => {
-                    // Cut the selection and set cursor to the start of the selecion
-                    clipboard_win::set_clipboard_string(&selection).unwrap();
-                    self.cursor_char_idx = selection.char_range.start;
-                    self.selection_start_char_idx = None;
-                    let mut taken_iter = (0..self.value.chars().count())
-                        .map(|char_idx| selection.char_range.contains(&char_idx));
-                    self.value.retain(|_| !taken_iter.next().unwrap());
-                }
-                None => {
-                    // Copy the entire value and then clear it
-                    clipboard_win::set_clipboard_string(&self.value).unwrap();
-                    self.value.clear();
-                    self.cursor_char_idx = 0;
-                    self.selection_start_char_idx = None;
-                }
-            },
+            Message::Cut => {
+                match self.selection() {
+                    Some(selection) => {
+                        // Cut the selection and set cursor to the start of the selecion
+                        clipboard_win::set_clipboard_string(&selection).unwrap();
+                        self.cursor_char_idx = selection.char_range.start;
+                        self.selection_start_char_idx = None;
+                        let mut taken_iter = (0..self.value.chars().count())
+                            .map(|char_idx| selection.char_range.contains(&char_idx));
+                        self.value.retain(|_| !taken_iter.next().unwrap());
+                    }
+                    None => {
+                        // Copy the entire value and then clear it
+                        clipboard_win::set_clipboard_string(&self.value).unwrap();
+                        self.value.clear();
+                        self.cursor_char_idx = 0;
+                        self.selection_start_char_idx = None;
+                    }
+                };
+                self.view_window.offsett = min(self.view_window.offsett, self.cursor_char_idx);
+            }
         }
     }
 
@@ -306,7 +399,7 @@ impl InputState {
             Some(start_char_idx) => {
                 let min_char_idx = min(start_char_idx, self.cursor_char_idx);
                 let min_byte_idx = char_idx_to_byte_idx(&self.value, min_char_idx);
-                let max_char_idx = max(start_char_idx, self.cursor_char_idx);
+                let max_char_idx = max(start_char_idx, self.cursor_char_idx) + 1;
                 let max_byte_idx = char_idx_to_byte_idx(&self.value, max_char_idx);
 
                 Some(Selection {
@@ -317,15 +410,6 @@ impl InputState {
             }
             None => None,
         }
-    }
-
-    pub(crate) fn selection_char_range(&self) -> Option<Range<usize>> {
-        self.selection().map(|x| x.char_range)
-    }
-
-    #[allow(unused)]
-    pub(crate) fn selection_byte_range(&self) -> Option<Range<usize>> {
-        self.selection().map(|x| x.byte_range)
     }
 }
 
@@ -340,8 +424,8 @@ fn char_idx_to_byte_idx(str: &str, char_idx: usize) -> usize {
 /// Selected text inside the [`InputState`]
 #[derive(Debug)]
 pub struct Selection {
-    char_range: Range<usize>,
-    byte_range: Range<usize>,
+    pub(crate) char_range: Range<usize>,
+    pub(crate) byte_range: Range<usize>,
     text: String,
 }
 
@@ -350,5 +434,409 @@ impl Deref for Selection {
 
     fn deref(&self) -> &Self::Target {
         &self.text
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_message() {
+        let mut state = InputState::default();
+        state.handle_message(Message::Empty);
+        assert_eq!(state, InputState::default());
+    }
+
+    #[test]
+    fn focus() {
+        let mut state = InputState::default();
+        assert!(!state.in_focus);
+
+        state.handle_message(Message::Focus);
+        assert!(state.in_focus);
+
+        state.handle_message(Message::RemoveFocus);
+        assert!(!state.in_focus);
+    }
+
+    #[test]
+    fn delete_on_cursor() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 6,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::DeleteOnCursor);
+
+        assert_eq!(state.text(), "žđščć🎈👓");
+        assert_eq!(state.cursor_char_idx(), 6);
+    }
+
+    #[test]
+    fn delete_on_cursor_with_selection() {
+        //žđščć[🎈🎨]👓
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 6,
+            selection_start_char_idx: Some(5),
+            ..Default::default()
+        };
+
+        assert_eq!(&*state.selection().unwrap(), "🎈🎨");
+        state.handle_message(Message::DeleteOnCursor);
+
+        //žđšč[ć]👓
+        assert_eq!(state.text(), "žđščć👓");
+        assert_eq!(state.cursor_char_idx(), 5);
+    }
+
+    #[test]
+    fn delete_before_cursor() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 6,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::DeleteBeforeCursor);
+
+        assert_eq!(state.text(), "žđščć🎨👓");
+    }
+
+    #[test]
+    fn delete_before_cursor_with_selection() {
+        //žđšč[ć🎈🎨]👓
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 6,
+            selection_start_char_idx: Some(4),
+            ..Default::default()
+        };
+
+        assert_eq!(&*state.selection().unwrap(), "ć🎈🎨");
+
+        state.handle_message(Message::DeleteBeforeCursor);
+
+        assert_eq!(state.text(), "žđšč👓");
+        assert_eq!(state.cursor_char_idx, 4);
+    }
+
+    #[test]
+    fn move_left() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 7,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveLeft);
+        assert_eq!(state.cursor_char_idx, 6);
+
+        state.handle_message(Message::MoveLeft);
+        assert_eq!(state.cursor_char_idx, 5);
+    }
+
+    #[test]
+    fn move_left_cancles_selection() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 7,
+            selection_start_char_idx: Some(5),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveLeft);
+        assert!(state.selection().is_none());
+    }
+
+    #[test]
+    fn move_left_on_start() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveLeft);
+
+        assert_eq!(state.cursor_char_idx(), 0);
+    }
+
+    #[test]
+    fn move_left_with_selection() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 6,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveLeftWithSelection);
+
+        assert_eq!(&*state.selection().unwrap(), "🎈🎨");
+        assert_eq!(state.cursor_char_idx(), 5);
+    }
+
+    #[test]
+    fn move_right() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveRight);
+        assert_eq!(state.cursor_char_idx(), 1);
+
+        state.handle_message(Message::MoveRight);
+        assert_eq!(state.cursor_char_idx(), 2);
+    }
+
+    #[test]
+    fn moving_right_cancles_selection() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            selection_start_char_idx: Some(5),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveRight);
+        assert!(state.selection().is_none());
+    }
+
+    #[test]
+    fn move_right_on_end() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 8,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveRight);
+
+        assert_eq!(state.cursor_char_idx(), 8);
+    }
+
+    #[test]
+    fn move_right_with_selecion() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::MoveRightWithSelection);
+
+        assert_eq!(&*state.selection().unwrap(), "žđ");
+        assert_eq!(state.cursor_char_idx(), 1);
+    }
+
+    #[test]
+    fn jump_to_end() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::JumpToEnd);
+
+        assert_eq!(state.cursor_byte_idx(), state.text().len());
+    }
+
+    #[test]
+    fn jump_to_end_with_selection() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::JumpToEndWithSelection);
+
+        assert_eq!(&*state.selection().unwrap(), state.text());
+        assert_eq!(state.cursor_char_idx(), 7);
+    }
+
+    #[test]
+    fn jump_to_start() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 7,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::JumpToStart);
+
+        assert_eq!(state.cursor_char_idx(), 0);
+    }
+
+    #[test]
+    fn jump_to_start_with_selection() {
+        let mut state = InputState {
+            value: String::from("žđščć🎈🎨👓"),
+            cursor_char_idx: 6,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::JumpToStartWithSelection);
+
+        assert_eq!(state.cursor_char_idx(), 0);
+        assert_eq!(&*state.selection().unwrap(), "žđščć🎈🎨");
+    }
+
+    #[test]
+    fn character_input_at_end() {
+        let mut state = InputState {
+            value: String::new(),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Char('0'));
+        assert_eq!(state.text(), "0");
+        assert_eq!(state.cursor_byte_idx(), 1);
+
+        state.handle_message(Message::Char('1'));
+        assert_eq!(state.text(), "01");
+        assert_eq!(state.cursor_byte_idx(), 2);
+    }
+
+    #[test]
+    fn character_input_in_middle() {
+        let mut state = InputState {
+            value: String::from("foo bar"),
+            cursor_char_idx: 3,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Char(' '));
+        state.handle_message(Message::Char('😎'));
+
+        assert_eq!(state.text(), "foo 😎 bar");
+        assert_eq!(state.cursor_char_idx(), 5);
+    }
+
+    #[test]
+    fn character_input_at_end_with_insert_mode() {
+        let mut state = InputState {
+            value: String::new(),
+            insert_mode: true,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Char('0'));
+        assert_eq!(state.text(), "0");
+        assert_eq!(state.cursor_byte_idx(), 1);
+
+        state.handle_message(Message::Char('1'));
+        assert_eq!(state.text(), "01");
+        assert_eq!(state.cursor_byte_idx(), 2);
+    }
+
+    #[test]
+    fn character_input_in_insert_mode() {
+        let mut state = InputState {
+            value: String::from("foo bar"),
+            insert_mode: true,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Char('h'));
+        state.handle_message(Message::Char('e'));
+        state.handle_message(Message::Char('l'));
+        state.handle_message(Message::Char('l'));
+        state.handle_message(Message::Char('o'));
+        state.handle_message(Message::Char(' '));
+        state.handle_message(Message::Char('w'));
+        state.handle_message(Message::Char('o'));
+        state.handle_message(Message::Char('r'));
+        state.handle_message(Message::Char('l'));
+        state.handle_message(Message::Char('d'));
+
+        assert_eq!(state.text(), "hello world");
+        assert_eq!(state.cursor_char_idx(), 11);
+    }
+
+    #[test]
+    fn character_input_on_selection() {
+        let mut state = InputState {
+            value: String::from("foo bar"),
+            cursor_char_idx: 5,
+            selection_start_char_idx: Some(1),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Char('a'));
+
+        assert_eq!(state.text(), "far");
+        assert_eq!(state.cursor_char_idx(), 2);
+    }
+
+    #[test]
+    fn character_input_at_end_in_insert_mode() {
+        let mut state = InputState {
+            value: String::new(),
+            insert_mode: true,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Char('0'));
+        assert_eq!(state.text(), "0");
+        assert_eq!(state.cursor_byte_idx(), 1);
+
+        state.handle_message(Message::Char('1'));
+        assert_eq!(state.text(), "01");
+        assert_eq!(state.cursor_byte_idx(), 2);
+    }
+
+    #[test]
+    fn paste_at_end() {
+        let mut state = InputState {
+            value: String::from("foo"),
+            cursor_char_idx: 3,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Paste(String::from(" bar")));
+
+        assert_eq!(state.text(), "foo bar");
+        assert_eq!(state.cursor_char_idx(), 7);
+    }
+
+    #[test]
+    fn paste_in_middle() {
+        let mut state = InputState {
+            value: String::from("foo bar"),
+            cursor_char_idx: 3,
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Paste(String::from("baz ")));
+
+        assert_eq!(state.text(), "foo baz bar");
+        assert_eq!(state.cursor_char_idx(), 7);
+    }
+
+    #[test]
+    fn paste_on_selection() {
+        let mut state = InputState {
+            value: String::from("foo bar"),
+            cursor_char_idx: 4,
+            selection_start_char_idx: Some(2),
+            ..Default::default()
+        };
+
+        state.handle_message(Message::Paste(String::from("faz")));
+
+        assert_eq!(state.text(), "fofazar");
+        assert_eq!(state.cursor_char_idx(), 5);
+        assert!(state.selection().is_none());
+    }
+
+    #[test]
+    fn insert_mode_toggle() {
+        let mut state = InputState::default();
+
+        assert!(!state.insert_mode);
+
+        state.handle_message(Message::ToggleInsertMode);
+
+        assert!(state.insert_mode);
     }
 }

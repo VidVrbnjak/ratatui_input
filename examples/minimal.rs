@@ -5,8 +5,8 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
     ExecutableCommand,
 };
-use ratatu_input::{Input, InputState};
 use ratatui::{backend::CrosstermBackend, Terminal};
+use ratatui_input::{Input, InputState};
 
 fn main() -> Result<(), std::io::Error> {
     stdout().execute(EnterAlternateScreen)?;
