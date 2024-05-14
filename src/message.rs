@@ -39,6 +39,10 @@ pub enum Message {
     Copy,
     /// Cut selected text or if there is no selection the entire input and add it to the clipboard
     Cut,
+    //TODO: SelectAll
+    //TODO: SelectWord
+    //TODO: JumpToEndOfWord
+    //TODO: JumpToStartOfWord
 }
 
 impl From<Event> for Message {
