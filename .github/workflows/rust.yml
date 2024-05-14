@@ -35,9 +35,13 @@ jobs:
       - run: cargo test --no-default-features -- --skip .rs
         if: ${{ matrix.os != 'windows-latest' }}
       - run: cargo test --no-default-features -- --skip .rs
-      - uses: codecov/codecov-action@v3
+      - name: Upload coverage to CodeCov
+        uses: codecov/codecov-action@v4
         with:
-          files: lcov.info
+          flags: smart-tests
+          verbose: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
   lint:
     runs-on: ubuntu-latest
     steps:
