@@ -1,3 +1,4 @@
+use clipboard::ClipboardProvider;
 use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind, KeyModifiers};
 
 /// Messages passed to the InputState
@@ -36,10 +37,8 @@ pub enum Message {
     /// Toggle the insert mode
     ToggleInsertMode,
     /// Copy selected text or if there is no selection, the entire input value and add it to the clipboard
-    #[cfg(target_os = "windows")]
     Copy,
     /// Cut selected text or if there is no selection the entire input and add it to the clipboard
-    #[cfg(target_os = "windows")]
     Cut,
     //TODO: SelectAll
     //TODO: SelectWord
@@ -108,29 +107,23 @@ impl From<KeyEvent> for Message {
                 KeyCode::Char(c) => match c {
                     'c' => {
                         if value.modifiers == KeyModifiers::CONTROL {
-                            if cfg!(target_os = "windows") {
-                                Message::Copy
-                            } else {
-                                Message::Empty
-                            }
+                            Message::Copy
                         } else {
                             Message::Char('c')
                         }
                     }
                     'x' => {
                         if value.modifiers == KeyModifiers::CONTROL {
-                            if cfg!(target_os = "windows") {
-                                Message::Cut
-                            } else {
-                                Message::Empty
-                            }
+                            Message::Cut
                         } else {
                             Message::Char('x')
                         }
                     }
                     'v' => {
                         if value.modifiers == KeyModifiers::CONTROL {
-                            match clipboard_win::get_clipboard_string() {
+                            match clipboard::ClipboardContext::new()
+                                .and_then(|mut cc| cc.get_contents())
+                            {
                                 Ok(str) => Message::Paste(str),
                                 Err(_) => Message::Empty,
                             }

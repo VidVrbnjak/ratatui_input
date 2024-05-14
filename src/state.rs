@@ -3,6 +3,8 @@ use std::{
     ops::{Deref, Range},
 };
 
+use clipboard::ClipboardProvider;
+
 use crate::Message;
 
 /// Stored state of the input widget. Used for the cursor position, text selection and windowing/scrolling
@@ -346,18 +348,21 @@ impl InputState {
             Message::Copy => match self.selection() {
                 Some(selection) => {
                     // Copy the selection
-                    clipboard_win::set_clipboard_string(&selection).unwrap();
+                    let _ = clipboard::ClipboardContext::new()
+                        .and_then(|mut cc| cc.set_contents(selection.to_string()));
                 }
                 None => {
                     // No selection, so we copy the entire value
-                    clipboard_win::set_clipboard_string(&self.value).unwrap()
+                    let _ = clipboard::ClipboardContext::new()
+                        .and_then(|mut cc| cc.set_contents(self.value.clone()));
                 }
             },
             Message::Cut => {
                 match self.selection() {
                     Some(selection) => {
                         // Cut the selection and set cursor to the start of the selecion
-                        clipboard_win::set_clipboard_string(&selection).unwrap();
+                        let _ = clipboard::ClipboardContext::new()
+                            .and_then(|mut cc| cc.set_contents(selection.to_string()));
                         self.cursor_char_idx = selection.char_range.start;
                         self.selection_start_char_idx = None;
                         let mut taken_iter = (0..self.value.chars().count())
@@ -366,7 +371,8 @@ impl InputState {
                     }
                     None => {
                         // Copy the entire value and then clear it
-                        clipboard_win::set_clipboard_string(&self.value).unwrap();
+                        let _ = clipboard::ClipboardContext::new()
+                            .and_then(|mut cc| cc.set_contents(self.value.clone()));
                         self.value.clear();
                         self.cursor_char_idx = 0;
                         self.selection_start_char_idx = None;
