@@ -10,6 +10,12 @@ pub struct Input {
     bg: Color,
 }
 
+impl Default for Input {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Input {
     /// Create a new [`Input`] widget
     pub fn new() -> Self {

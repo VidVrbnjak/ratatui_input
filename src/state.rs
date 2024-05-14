@@ -39,9 +39,9 @@ impl From<Range<usize>> for ViewWindow {
     }
 }
 
-impl Into<Range<usize>> for ViewWindow {
-    fn into(self) -> Range<usize> {
-        self.offsett..(self.offsett + self.width)
+impl From<ViewWindow> for Range<usize> {
+    fn from(val: ViewWindow) -> Self {
+        val.offsett..(val.offsett + val.width)
     }
 }
 
@@ -187,41 +187,39 @@ impl InputState {
                         if self.cursor_char_idx == self.value.chars().count() {
                             // We are outside the string, so we push onto it
                             self.value.push(c);
+                        } else if self.insert_mode {
+                            // The cursor is on a character so we replace that character
+                            let start_idx = self
+                                .value
+                                .char_indices()
+                                .enumerate()
+                                .find(|(char_idx, _)| char_idx == &self.cursor_char_idx)
+                                .map(|(_, (byte_idx, _))| byte_idx)
+                                .unwrap();
+
+                            let end_idx = self
+                                .value
+                                .char_indices()
+                                .enumerate()
+                                .find(|(char_idx, _)| char_idx + 1 == self.cursor_char_idx)
+                                .map(|(_, (byte_idx, _))| byte_idx)
+                                .unwrap_or(self.value.len());
+
+                            self.value.replace_range(
+                                start_idx..end_idx,
+                                Into::<String>::into(c).as_str(),
+                            );
                         } else {
-                            if self.insert_mode {
-                                // The cursor is on a character so we replace that character
-                                let start_idx = self
-                                    .value
-                                    .char_indices()
-                                    .enumerate()
-                                    .find(|(char_idx, _)| char_idx == &self.cursor_char_idx)
-                                    .map(|(_, (byte_idx, _))| byte_idx)
-                                    .unwrap();
+                            // The cursor is on a character inside the string so we insert the character at that position
+                            let idx = self
+                                .value
+                                .char_indices()
+                                .enumerate()
+                                .find(|(char_idx, _)| char_idx == &self.cursor_char_idx)
+                                .map(|(_, (byte_idx, _))| byte_idx)
+                                .unwrap();
 
-                                let end_idx = self
-                                    .value
-                                    .char_indices()
-                                    .enumerate()
-                                    .find(|(char_idx, _)| char_idx + 1 == self.cursor_char_idx)
-                                    .map(|(_, (byte_idx, _))| byte_idx)
-                                    .unwrap_or(self.value.len());
-
-                                self.value.replace_range(
-                                    start_idx..end_idx,
-                                    Into::<String>::into(c).as_str(),
-                                );
-                            } else {
-                                // The cursor is on a character inside the string so we insert the character at that position
-                                let idx = self
-                                    .value
-                                    .char_indices()
-                                    .enumerate()
-                                    .find(|(char_idx, _)| char_idx == &self.cursor_char_idx)
-                                    .map(|(_, (byte_idx, _))| byte_idx)
-                                    .unwrap();
-
-                                self.value.insert(idx, c);
-                            }
+                            self.value.insert(idx, c);
                         }
                         self.cursor_char_idx += 1;
                         if !self.view_window.contains(self.cursor_char_idx) {
