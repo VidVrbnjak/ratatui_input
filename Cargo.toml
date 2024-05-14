@@ -15,6 +15,7 @@ homepage = "https://github.com/VidVrbnjak/ratatui_input"
 
 [package.metadata.docs.rs]
 targets = ["x86_64-pc-windows-msvc"]
+features = []
 
 [dependencies]
 clipboard = "0.5.0"
