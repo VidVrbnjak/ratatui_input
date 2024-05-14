@@ -6,22 +6,23 @@ use ratatui::prelude::*;
 /// Input widget
 #[derive(Debug, Clone)]
 pub struct Input {
-    fg: Color,
-    bg: Color,
+    /// Color of text foreground
+    pub text_fg: Color,
+    /// Color of text background
+    pub text_bg: Color,
+    /// Color of cursor and selection foreground
+    pub cursor_fg: Color,
+    /// Color of cursor and selection background
+    pub cursor_bg: Color,
 }
 
 impl Default for Input {
     fn default() -> Self {
-        Self::new()
-    }
-}
-
-impl Input {
-    /// Create a new [`Input`] widget
-    pub fn new() -> Self {
         Self {
-            fg: Color::White,
-            bg: Color::Black,
+            text_fg: Color::White,
+            text_bg: Color::Black,
+            cursor_fg: Color::Black,
+            cursor_bg: Color::White,
         }
     }
 }
@@ -63,7 +64,7 @@ impl StatefulWidget for Input {
             .to_string()
             .chars()
             .skip(view_window.offsett)
-            .take(view_window.width)
+            .take(view_window.width - 1)
             .collect::<String>();
 
         for _ in text.chars().count()..(view_window.width) {
@@ -82,9 +83,9 @@ impl StatefulWidget for Input {
             let _ = if highlight_range.contains(&(view_window.offsett + idx))
                 || state.cursor_char_idx() == view_window.offsett + idx
             {
-                cell.set_fg(self.bg).set_bg(self.fg)
+                cell.set_fg(self.cursor_fg).set_bg(self.cursor_bg)
             } else {
-                cell.set_fg(self.fg).set_bg(self.bg)
+                cell.set_fg(self.text_fg).set_bg(self.text_bg)
             };
         }
     }
@@ -130,7 +131,7 @@ mod tests {
     #[test]
     fn view_window_increase() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 10, 3));
-        let widget = Input::new();
+        let widget = Input::default();
         let mut state = InputState::default();
 
         widget.clone().render(buf.area, &mut buf, &mut state);
@@ -147,21 +148,21 @@ mod tests {
     #[test]
     fn cursor_highlight() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
-        let widget = Input::new();
+        let widget = Input::default();
         let mut state = InputState::default();
 
         widget.clone().render(buf.area, &mut buf, &mut state);
 
         assert_buffer_eq!(
             buf,
-            new_buffer("     ", None, 0, buf.area, widget.bg, widget.fg)
+            new_buffer("     ", None, 0, buf.area, widget.text_bg, widget.text_fg)
         )
     }
 
     #[test]
     fn autoscroll_moving_right_on_paste() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
-        let widget = Input::new();
+        let widget = Input::default();
         let mut state = InputState::default();
 
         state.handle_message(Message::Paste(String::from("foo bar")));
@@ -178,14 +179,14 @@ mod tests {
         );
         assert_buffer_eq!(
             buf,
-            new_buffer(" bar ", None, 4, buf.area, widget.bg, widget.fg)
+            new_buffer(" bar ", None, 4, buf.area, widget.text_bg, widget.text_fg)
         );
     }
 
     #[test]
     fn autoscrolling_moving_right_on_input() {
         let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
-        let widget = Input::new();
+        let widget = Input::default();
         let mut state = InputState::default();
 
         state.handle_message(Message::Char('f'));
@@ -209,7 +210,7 @@ mod tests {
         );
         assert_buffer_eq!(
             buf,
-            new_buffer(" bar ", None, 4, buf.area, widget.bg, widget.fg)
+            new_buffer(" bar ", None, 4, buf.area, widget.text_bg, widget.text_fg)
         )
     }
 }

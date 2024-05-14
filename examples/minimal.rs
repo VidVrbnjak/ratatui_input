@@ -19,7 +19,7 @@ fn main() -> Result<(), std::io::Error> {
     loop {
         terminal.draw(|frame| {
             let area = frame.size();
-            let input = Input::new();
+            let input = Input::default();
             frame.render_stateful_widget(input, area, &mut state);
         })?;
         if event::poll(std::time::Duration::from_millis(16))? {

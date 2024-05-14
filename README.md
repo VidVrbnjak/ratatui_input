@@ -1,11 +1,11 @@
-ratatui-input
+ratatui_input
 ============
 [![crate][crates-io-badge]][crate]
 [![docs][doc-badge]][doc]
 [![CI][ci-badge]][ci]
 [![coverage][codecov-badge]][codecov]
 
-[ratatui-input][crate] is a simple input widget like `<input />` in HTML for [ratatui][].
+[ratatui_input][crate] is a simple input widget like `<input />` in HTML for [ratatui][].
 
 **UNDER CONSTRUCTION**
 This crate is still under heavy construction and not ready or use yet
@@ -26,7 +26,7 @@ This crate is still under heavy construction and not ready or use yet
 [Documentation][doc]
 
 ## Exmaple
-Running `cargo run --example` in this repository can demonstrate usage of ratatui-input
+Running `cargo run --example` in this repository can demonstrate usage of ratatui_input
 `TODO: Upload a GIF of the exmaple running`
 
 ## Instalation
@@ -35,7 +35,7 @@ Add `ratatui_input` crate to dependecies in your `Cargo.toml`
 ```toml
 [dependecies]
 ratatui = "*"
-ratatui-input = "*"
+ratatui_input = "*"
 ```
 
 ## Key mappings
@@ -62,19 +62,19 @@ ratatui-input = "*"
 
 ## License
 
-[ratatui-input][] is distributed under [The MIT License](./LICENSE.txt).
+[ratatui_input][] is distributed under [The MIT License](./LICENSE.txt).
 
 [ratatui]: https://github.com/ratatui-org/ratatui
-[crates-io-badge]: https://img.shields.io/crates/v/ratatui-input.svg
-[crate]: https://crates.io/crates/ratatui-input
-[doc-badge]: https://docs.rs/ratatui-input/badge.svg
-[doc]: https:docs.rs/ratatui-input/latest/ratatui-input
-[ci-badge]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/ci.yml/badge.svg?event=push
-[ci]: https://github.com/vidvrbnjak/ratatui_input/actions/workflows/rust.yml
-[codecov-badge]: https://codecov.io/gh/vidvrbnjak/tui-ratatui/graph/badge.svg?token=YAA3EVRXAY
-[codecov]: https://codecov.io/gh/vidvrbnjak/ratatui-input
+[crates-io-badge]: https://img.shields.io/crates/v/ratatui_input.svg
+[crate]: https://crates.io/crates/ratatui_input
+[doc-badge]: https://docs.rs/ratatui_input/badge.svg
+[doc]: https:docs.rs/ratatui_input/latest/ratatui_input
+[ci-badge]: https://github.com/VidVrbnjak/ratatui_input/actions/workflows/ci.yml/badge.svg?event=push
+[ci]: https://github.com/VidVrbnjak/ratatui_input/actions/workflows/rust.yml
+[codecov-badge]: https://codecov.io/gh/VidVrbnjak/tui-ratatui/graph/badge.svg?token=YAA3EVRXAY
+[codecov]: https://codecov.io/gh/VidVrbnjak/ratatui_input
 [crossterm]: https://docs.rs/crossterm/latest/crossterm/
 [termion]: https://docs.rs/termion/latest/termion/
 [termwiz]: https://docs.rs/termwiz/latest/termwiz/
 [ratatui-backend]: https://docs.rs/ratatui/latest/ratatui/backend/trait.Backend.html
-[repo]: https://github.com/vidvrbnjak/ratatui-input
+[repo]: https://github.com/VidVrbnjak/ratatui_input
