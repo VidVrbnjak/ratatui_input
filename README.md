@@ -68,10 +68,10 @@ ratatui_input = "*"
 [crates-io-badge]: https://img.shields.io/crates/v/ratatui_input.svg
 [crate]: https://crates.io/crates/ratatui_input
 [doc-badge]: https://docs.rs/ratatui_input/badge.svg
-[doc]: https:docs.rs/ratatui_input/latest/ratatui_input
-[ci-badge]: https://github.com/VidVrbnjak/ratatui_input/actions/workflows/ci.yml/badge.svg?event=push
+[doc]: https://docs.rs/ratatui_input/latest/ratatui_input
+[ci-badge]: https://github.com/VidVrbnjak/ratatui_input/actions/workflows/rust.yml/badge.svg?event=push
 [ci]: https://github.com/VidVrbnjak/ratatui_input/actions/workflows/rust.yml
-[codecov-badge]: https://codecov.io/gh/VidVrbnjak/tui-ratatui/graph/badge.svg?token=YAA3EVRXAY
+[codecov-badge]: https://codecov.io/gh/VidVrbnjak/ratatui_input/graph/badge.svg?token=643UEHDO13
 [codecov]: https://codecov.io/gh/VidVrbnjak/ratatui_input
 [crossterm]: https://docs.rs/crossterm/latest/crossterm/
 [termion]: https://docs.rs/termion/latest/termion/
