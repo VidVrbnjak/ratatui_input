@@ -62,12 +62,12 @@ jobs:
       - name: Run `cargo doc` with same configuration as docs.rs
         run: |
           set -e
-          md="$(cargo metadata --format-version=1 | jq '.packages[] | select(.name=="ratatui-input") | .metadata.docs.rs')"
+          md="$(cargo metadata --format-version=1 | jq '.packages[] | select(.name=="ratatui_input") | .metadata.docs.rs')"
           export RUSTDOCFLAGS="$(echo "$md" | jq -r '.["rustdoc-args"] | join(" ")') -D warnings"
           features="$(echo "$md" | jq -r '.features | join(",")')"
           set -x
           for target in $(echo "$md" | jq -r '.targets | join(" ")')
           do
             rustup target add "$target"
-            cargo doc -p tui-textarea "--features=$features" "--target=$target"
+            cargo doc -p tui_textarea "--features=$features" "--target=$target"
           done
