@@ -67,5 +67,3 @@ jobs:
             rustup target add "$target"
             cargo doc -p tui-textarea "--features=$features" "--target=$target"
           done
-          
-run `cargo doc` check on CI · VidVrbnajk/ratatui-input@39075bb 
