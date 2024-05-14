@@ -52,7 +52,7 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - run: cargo fmt -- --check
       - run: cargo clippy --examples --tests -- -D warnings
-      - run: cargo rustdoc -p ratatui-input -- -D warnings
+      - run: cargo rustdoc -p ratatui_input -- -D warnings
       
   cargo-doc:
     runs-on: ubuntu-latest
