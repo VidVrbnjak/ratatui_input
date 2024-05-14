@@ -69,5 +69,5 @@ jobs:
           for target in $(echo "$md" | jq -r '.targets | join(" ")')
           do
             rustup target add "$target"
-            cargo doc -p tui_textarea "--features=$features" "--target=$target"
+            cargo doc -p ratatui_input "--features=$features" "--target=$target"
           done
