@@ -1,5 +1,3 @@
-use std::io::stdout;
-
 use crossterm::{
     event::{self, KeyCode},
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
@@ -7,6 +5,7 @@ use crossterm::{
 };
 use ratatui::{backend::CrosstermBackend, Terminal};
 use ratatui_input::{Input, InputState};
+use std::io::stdout;
 
 fn main() -> Result<(), std::io::Error> {
     stdout().execute(EnterAlternateScreen)?;

@@ -1,6 +1,6 @@
 [package]
 name = "ratatui_input"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 autoexamples = true
 authors = ["Vid Vrbnjak"]
@@ -13,6 +13,9 @@ description = "Simple to use input widget for ratatui"
 repository = "https://github.com/VidVrbnjak/ratatui_input"
 homepage = "https://github.com/VidVrbnjak/ratatui_input"
 
+[package.metadata.docs.rs]
+targets = ["x86_64-pc-windows-msvc"]
+
 [dependencies]
 clipboard = "0.5.0"
 crossterm = "0.27.0"
@@ -20,3 +23,7 @@ ratatui = "0.26.2"
 
 [dev-dependencies]
 indoc = "2.0.5"
+
+[[example]]
+name = "minimal"
+doc-scrape-examples = true
