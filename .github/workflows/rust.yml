@@ -24,7 +24,7 @@ jobs:
         uses: taiki-e/install-action@cargo-llvm-cov
       - name: Install xorg-dev
         run: |
-          sudo apt-get install xorg-dev
+          sudo apt-get install xorg-dev pkg-config libasound2-dev libssl-dev cmake libfreetype6-dev libexpat1-dev libxcb-composite0-dev
         if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: Run tests on Linux or macOS
         run: |
