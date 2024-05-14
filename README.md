@@ -13,15 +13,17 @@ This crate is still under heavy construction and not ready or use yet
 **Features**
 
 - Single line input with baisc operations (insert/delet characters, copy, cut, jumps, ...)
-- Windows style shortcuts (`Ctrl-v`, `Ctrl-v`, `Ctrl-x`, `Home`, `End`)
+- Windows style shortcuts (`Ctrl-v`, `Ctrl-v`, `Ctrl-x`, `Home`, `End`, ...)
 - Text selection
-- Does not need terminal cursor capture
+- Does not use the terminal cursor and does not need to capture it, because it has its own cursor implemented
+- Crossterm support
+- Backend agnostic
+- Autoscroll
 
 **Comming soon**
-- Backend agnostic
 - Undo/Redo
 - Masking
-- Autoscroll
+- Placeholder
 
 [Documentation][doc]
 

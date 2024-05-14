@@ -14,6 +14,8 @@ pub struct Input {
     pub cursor_fg: Color,
     /// Color of cursor and selection background
     pub cursor_bg: Color,
+    /// Symbol used to mask the input. Commonly used for passwords
+    pub mask_symbol: Option<char>,
 }
 
 impl Default for Input {
@@ -23,6 +25,7 @@ impl Default for Input {
             text_bg: Color::Black,
             cursor_fg: Color::Black,
             cursor_bg: Color::White,
+            mask_symbol: None,
         }
     }
 }
@@ -59,23 +62,27 @@ impl StatefulWidget for Input {
 
         let view_window = view_window.clone();
 
-        let mut text = state
+        let mut display_text = state
             .text()
             .to_string()
             .chars()
             .skip(view_window.offsett)
-            .take(view_window.width - 1)
+            .take(view_window.width)
+            .map(|ch| match self.mask_symbol {
+                Some(mask) => mask,
+                None => ch,
+            })
             .collect::<String>();
 
-        for _ in text.chars().count()..(view_window.width) {
-            text.push(' ');
+        for _ in display_text.chars().count()..(view_window.width) {
+            display_text.push(' ');
         }
 
         let highlight_range = state
             .selection()
             .map_or(Range::default(), |selection| selection.char_range);
 
-        for (idx, symbol) in text.chars().enumerate() {
+        for (idx, symbol) in display_text.chars().enumerate() {
             let cell = buf
                 .get_mut(area.x + idx as u16, area.y)
                 .set_symbol(symbol.to_string().as_str());
