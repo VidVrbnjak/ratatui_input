@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::InputState;
 use ratatui::prelude::*;
 
@@ -23,7 +25,6 @@ impl StatefulWidget for Input {
 
     fn render(self, area: Rect, buf: &mut Buffer, state: &mut Self::State) {
         let cursor_char_index = state.cursor_char_idx();
-        let selection_char_range = state.selection().map(|f| f.char_range);
         let view_window = &mut state.view_window;
         let old_width = view_window.width;
 
@@ -51,37 +52,34 @@ impl StatefulWidget for Input {
 
         let view_window = view_window.clone();
 
-        let mut text_iter = state
+        let mut text = state
             .text()
+            .to_string()
             .chars()
             .skip(view_window.offsett)
-            .take(view_window.width);
+            .take(view_window.width)
+            .collect::<String>();
 
-        for idx in 0..view_window.width {
-            let cell = buf.get_mut(area.x + idx as u16, area.y);
-            let symbol = if state.view_window.contains(idx + view_window.offsett) {
-                text_iter.next().unwrap_or(' ')
-            } else {
-                ' '
-            };
+        for _ in text.chars().count()..(view_window.width) {
+            text.push(' ');
+        }
 
-            if selection_char_range
-                .as_ref()
-                .is_some_and(|cr| cr.contains(&(idx + view_window.offsett)))
-                || cursor_char_index == idx + view_window.offsett
+        let highlight_range = state
+            .selection()
+            .map_or(Range::default(), |selection| selection.char_range);
+
+        for (idx, symbol) in text.chars().enumerate() {
+            let cell = buf
+                .get_mut(area.x + idx as u16, area.y)
+                .set_symbol(symbol.to_string().as_str());
+
+            let _ = if highlight_range.contains(&(view_window.offsett + idx))
+                || state.cursor_char_idx() == view_window.offsett + idx
             {
-                // This is a highlighted cell, becuase the cursor or selection is on it
-                let _ = cell
-                    .set_bg(self.fg)
-                    .set_fg(self.bg)
-                    .set_symbol(symbol.to_string().as_str());
+                cell.set_fg(self.bg).set_bg(self.fg)
             } else {
-                // Normal cell
-                let _ = cell
-                    .set_bg(self.bg)
-                    .set_fg(self.fg)
-                    .set_symbol(symbol.to_string().as_str());
-            }
+                cell.set_fg(self.fg).set_bg(self.bg)
+            };
         }
     }
 }
@@ -97,16 +95,21 @@ mod tests {
 
     fn new_buffer(
         content: &str,
-        highligh: Range<usize>,
+        highlight: Option<Range<usize>>,
+        cursor_idx: usize,
         area: Rect,
         bg: Color,
         fg: Color,
     ) -> Buffer {
-        let mut buf = Buffer::empty(area);
+        let mut buf = Buffer::empty(Rect::new(area.x, 0, area.width, 1));
         for (idx, char) in content.chars().enumerate() {
-            let cell = buf.get_mut(area.x + idx as u16, area.y);
-            let _ = cell.set_symbol(char.to_string().as_str());
-            if highligh.contains(&idx) {
+            let cell = buf.get_mut(area.x + idx as u16, 0);
+            let cell = cell.set_symbol(char.to_string().as_str());
+            if highlight
+                .as_ref()
+                .is_some_and(|highlight| highlight.contains(&idx))
+                || idx == cursor_idx
+            {
                 cell.bg = fg;
                 cell.fg = bg;
             } else {
@@ -137,18 +140,16 @@ mod tests {
 
     #[test]
     fn cursor_highlight() {
-        let mut buf = Buffer::empty(Rect::new(0, 0, 100, 3));
+        let mut buf = Buffer::empty(Rect::new(0, 0, 5, 1));
         let widget = Input::new();
         let mut state = InputState::default();
 
         widget.clone().render(buf.area, &mut buf, &mut state);
 
-        let cursor_cell = buf.get(
-            (state.cursor_char_idx() - state.view_window.offsett) as u16,
-            0,
-        );
-        assert_eq!(cursor_cell.bg, widget.fg);
-        assert_eq!(cursor_cell.fg, widget.bg);
+        assert_buffer_eq!(
+            buf,
+            new_buffer("     ", None, 0, buf.area, widget.bg, widget.fg)
+        )
     }
 
     #[test]
@@ -171,13 +172,7 @@ mod tests {
         );
         assert_buffer_eq!(
             buf,
-            new_buffer(
-                " bar ",
-                state.view_window.into(),
-                buf.area,
-                widget.bg,
-                widget.fg
-            )
+            new_buffer(" bar ", None, 4, buf.area, widget.bg, widget.fg)
         );
     }
 
@@ -208,13 +203,7 @@ mod tests {
         );
         assert_buffer_eq!(
             buf,
-            new_buffer(
-                " bar ",
-                state.view_window.into(),
-                buf.area,
-                widget.bg,
-                widget.fg
-            )
+            new_buffer(" bar ", None, 4, buf.area, widget.bg, widget.fg)
         )
     }
 }

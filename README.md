@@ -67,6 +67,7 @@ ratatui-input = "*"
 [ratatui]: https://github.com/ratatui-org/ratatui
 [crates-io-badge]: https://img.shields.io/crates/v/ratatui-input.svg
 [crate]: https://crates.io/crates/ratatui-input
+[doc-badge]: https://docs.rs/ratatui-input/badge.svg
 [doc]: https:docs.rs/ratatui-input/latest/ratatui-input
 [ci-badge]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/ci.yml/badge.svg?event=push
 [ci]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/ci.yml
