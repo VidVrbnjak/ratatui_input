@@ -22,6 +22,10 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Install xorg-dev
+        run: |
+          sudo apt-get install xorg-dev
+        if: ${{ matrix.os == 'ubuntu-latest' }}
       - name: Run tests on Linux or macOS
         run: |
           cargo llvm-cov --color always --lcov --output-path lcov.info
