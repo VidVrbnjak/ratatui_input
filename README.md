@@ -70,7 +70,7 @@ ratatui-input = "*"
 [doc-badge]: https://docs.rs/ratatui-input/badge.svg
 [doc]: https:docs.rs/ratatui-input/latest/ratatui-input
 [ci-badge]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/ci.yml/badge.svg?event=push
-[ci]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/ci.yml
+[ci]: https://github.com/vidvrbnjak/ratatui-input/actions/workflows/rust.yml
 [codecov-badge]: https://codecov.io/gh/vidvrbnjak/tui-ratatui/graph/badge.svg?token=YAA3EVRXAY
 [codecov]: https://codecov.io/gh/vidvrbnjak/ratatui-input
 [crossterm]: https://docs.rs/crossterm/latest/crossterm/
