@@ -1,0 +1,71 @@
+name: CI
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  unit-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: true
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+      - name: Run tests on Linux or macOS
+        run: |
+          cargo llvm-cov --color always --lcov --output-path lcov.info
+          cargo llvm-cov --color always --no-run
+        if: ${{ matrix.os != 'windows-latest' }}
+      - name: Run tests on Windows
+        run: |
+          cargo llvm-cov --color always --lcov --output-path lcov.info 
+          cargo llvm-cov --color always --no-run
+        if: ${{ matrix.os == 'windows-latest' }}
+      - run: cargo test --no-default-features -- --skip .rs
+        if: ${{ matrix.os != 'windows-latest' }}
+      - run: cargo test --no-default-features -- --skip .rs
+      - uses: codecov/codecov-action@v3
+        with:
+          files: lcov.info
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy,rustfmt
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo fmt -- --check
+      - run: cargo clippy --examples --tests -- -D warnings
+      - run: cargo rustdoc -p ratatui-input -- -D warnings
+      
+  cargo-doc:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - name: Run `cargo doc` with same configuration as docs.rs
+        run: |
+          set -e
+          md="$(cargo metadata --format-version=1 | jq '.packages[] | select(.name=="ratatui-input") | .metadata.docs.rs')"
+          export RUSTDOCFLAGS="$(echo "$md" | jq -r '.["rustdoc-args"] | join(" ")') -D warnings"
+          features="$(echo "$md" | jq -r '.features | join(",")')"
+          set -x
+          for target in $(echo "$md" | jq -r '.targets | join(" ")')
+          do
+            rustup target add "$target"
+            cargo doc -p tui-textarea "--features=$features" "--target=$target"
+          done
+          
+run `cargo doc` check on CI · VidVrbnajk/ratatui-input@39075bb 
